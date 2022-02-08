@@ -19,8 +19,8 @@ namespace StardewUpdater
         private bool hasConfig;
         private Configuration configuration;
         public List<Func<string>> functions = new List<Func<string>>();
-        private readonly string _apikey = "Q3FPNUUvVCtzWHltWFdKTDZhTklMRUdPOGRLUGlqaGh4dXhWd2laWXFZZ1RwREcxaDV1UlRzQ01SQk1LTnM5Ny0tMmNubVFvQnNYN3Rib0FWai9ucFN4QT09--119ab7b53305b8b1678b0007a3b28955f402e729";
-        private readonly string gameId = "1303";
+        private readonly string _apikey = "XXXXXXXXXX";
+        private readonly string gameName = "Stardew Valley";
 
         public Form1()
         {
@@ -112,9 +112,9 @@ namespace StardewUpdater
                             {
                                 configuration.knownSteamFolders.Add(dir);
                                 //hit and search in it
-                                if (Directory.Exists(dir + @"\common\Stardew Valley"))
+                                if (Directory.Exists(dir + $@"\common\{gameName}"))
                                 {
-                                    configuration.installationFolder = dir + @"\common\Stardew Valley";
+                                    configuration.installationFolder = dir + $@"\common\{gameName}";
                                     break;
                                 }
                             }
@@ -125,9 +125,9 @@ namespace StardewUpdater
                                 {
                                     configuration.knownSteamFolders.Add(innerDirs);
                                     //hit and search in it
-                                    if (Directory.Exists(innerDirs + @"\common\Stardew Valley"))
+                                    if (Directory.Exists(innerDirs + $@"\common\{gameName}"))
                                     {
-                                        configuration.installationFolder = innerDirs + @"\common\Stardew Valley";
+                                        configuration.installationFolder = innerDirs + $@"\common\{gameName}";
                                         break;
                                     }
                                 }
@@ -141,9 +141,9 @@ namespace StardewUpdater
                             {
                                 configuration.knownSteamFolders.Add(dir);
                                 //hit and search in it
-                                if (Directory.Exists(dir + @"\common\Stardew Valley"))
+                                if (Directory.Exists(dir + $@"\common\{gameName}"))
                                 {
-                                    configuration.installationFolder = dir + @"\common\Stardew Valley";
+                                    configuration.installationFolder = dir + $@"\common\{gameName}";
                                     break;
                                 }
                             }
@@ -154,9 +154,9 @@ namespace StardewUpdater
                                 {
                                     configuration.knownSteamFolders.Add(innerDirs);
                                     //hit and search in it
-                                    if (Directory.Exists(innerDirs + @"\common\Stardew Valley"))
+                                    if (Directory.Exists(innerDirs + $@"\common\{gameName}"))
                                     {
-                                        configuration.installationFolder = innerDirs + @"\common\Stardew Valley";
+                                        configuration.installationFolder = innerDirs + $@"\common\{gameName}";
                                         break;
                                     }
                                 }
@@ -171,9 +171,9 @@ namespace StardewUpdater
                         {
                             configuration.knownSteamFolders.Add(dir);
                             //hit and search in it
-                            if (Directory.Exists(dir + @"\common\Stardew Valley"))
+                            if (Directory.Exists(dir + $@"\common\{gameName}"))
                             {
-                                configuration.installationFolder = dir + @"\common\Stardew Valley";
+                                configuration.installationFolder = dir + $@"\common\{gameName}";
                                 break;
                             }
                         }
@@ -184,9 +184,9 @@ namespace StardewUpdater
                             {
                                 configuration.knownSteamFolders.Add(innerDirs);
                                 //hit and search in it
-                                if (Directory.Exists(innerDirs + @"\common\Stardew Valley"))
+                                if (Directory.Exists(innerDirs + $@"\common\{gameName}"))
                                 {
-                                    configuration.installationFolder = innerDirs + @"\common\Stardew Valley";
+                                    configuration.installationFolder = innerDirs + $@"\common\{gameName}";
                                     break;
                                 }
                             }
@@ -254,7 +254,6 @@ namespace StardewUpdater
             }
 
             string maincontent = strContent.Substring(0, strContent.IndexOf("<a href=\"/Pathoschild/SMAPI/releases/latest\" data-view-component=\"true\" class=\"v-align-text-bottom d-none d-md-inline-block\"><span data-view-component=\"true\" class=\"Label Label--success Label--large\">Latest</span></a>") - 14);//14 for 2 closing tags
-            int versionpos = maincontent.LastIndexOf('>');
             configuration.latestSMAPIVersion = maincontent.Substring(maincontent.LastIndexOf('>')+1);
             return "Searching for Mod Versions...";
         }
@@ -287,10 +286,7 @@ namespace StardewUpdater
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    
-                }
+                catch { }
             }
             return "Savin Progress...";
         }
