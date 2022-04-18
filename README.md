@@ -47,6 +47,26 @@ For other games currently all Webrequest across the project have to be edited.
 
 ## Changelogs
 ----
+### Version 0.4.0
+- Implement SettingsPage
+- Implement Export of local ModConfiguration
+- Added appsettings for simplyfied reaction to changes of third parties
+- Added ExtensionMethods to cleanup code
+- Implement CheckConfigurationFile
+- Fully implement getAllMods to get 90% of Mod directories (some are strange build... Will be fixed in future Update)
+- Implement setNewestSmapiVersion to start the SMAPI Update process automatically
+- Implement Download and Install button. Downloads an SVU-ModConfigImport.json file and runs through it configuration
+- Implement Update button. Now Updates all selected Mods, if possible
+- Implement Backup functionality
+- Implement Delete functionality of selected Mods
+- Fixed: Now reads Configfile correctly
+- Refactoring implementation of MainWindow (Mainly on Invokes and Process of Method calling)
+
+#### Known Issues
+- Dependencies still break the Update process sometimes
+- Background work is still not done correctly
+- sometimes the Updater cant get the right SMAPI Version
+
 ### Version 0.3.0 before Repository-upload
 - Implement Download for Mods
 
