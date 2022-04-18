@@ -1,32 +1,33 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace StardewUpdater
 {
     public class Mods
     {
-        public string Name;
+        public string Name { get; set; }
 
-		public string Author;
+		public string Author { get; set; }
 
-		public string Version;
+		public Version Version { get; set; }
 
-		public string latestVersion;
+		public Version latestVersion { get; set; }
 
-		public string Description;
+		public string Description { get; set; }
 
-		public string UniqueID;
+		public string UniqueID { get; set; }
 
-		public string MinimumApiVersion;
+		public Version MinimumApiVersion { get; set; }
 
-		public List<Depedencies> Dependencies = new List<Depedencies>();
+		public List<Depedencies> Dependencies { get; set; } = new List<Depedencies>();
 
-		public string[] UpdateKeys;
+		public string[] UpdateKeys { get; set; }
 	}
 
 	public class Depedencies
 	{
-		public string UniqueID;
+		public string UniqueID { get; set; }
 
-		public bool IsRequired;
+		public bool IsRequired { get; set; } = true;
 	}
 }

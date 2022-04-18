@@ -6,20 +6,20 @@ namespace StardewUpdater
     [Serializable]
     public class Configuration
     {
-        public string installationFolder;
+        public string installationFolder { get; set; }
 
-        public List<string> knownSteamFolders = new List<string>();
+        public List<string> knownSteamFolders { get; set; } = new List<string>();
 
-        public List<string> knownGoGFolders = new List<string>();
+        public List<string> knownGoGFolders { get; set; } = new List<string>();
 
-        public List<Mods> installedMods = new List<Mods>();
+        public List<Mods> installedMods { get; set; } = new List<Mods>();
 
-        public List<Mods> unknownInstalledMods = new List<Mods>();
+        public List<Mods> unknownInstalledMods { get; set; } = new List<Mods>();
 
-        public bool isSMAPIInstalled;
+        public bool isSMAPIInstalled { get; set; }
 
-        public string SMAPIVersion;
+        public Version SMAPIVersion { get; set; }
 
-        public string latestSMAPIVersion;
+        public Version latestSMAPIVersion { get; set; }
     }
 }
