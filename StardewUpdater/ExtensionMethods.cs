@@ -32,6 +32,19 @@ namespace StardewUpdater
         }
 
         /// <summary> 
+        /// Replaces all revisionnumbers with value -1 in a text literal
+        /// </summary>
+        /// <param name="replacement">Optional parameter setting the replacemnet value. Default: "0"</param>
+        /// <returns>Returns an string without unused ( value -1) revisionnumbers</returns> 
+        public static string ReplaceUnusedVersionRevisions(this string textWithVersions, string replacement = "0")
+        {
+            textWithVersions = textWithVersions.Replace("\"Revision\": -1", $"\"Revision\": {replacement}");
+            textWithVersions = textWithVersions.Replace("\"MajorRevision\": -1", $"\"MajorRevision\" {replacement}");
+            textWithVersions = textWithVersions.Replace("\"MinorRevision\": -1", $"\"MinorRevision\": {replacement}");
+            return textWithVersions;
+        }
+
+        /// <summary> 
         /// Removes all spaces from a string
         /// </summary>
         /// <returns>Returns the string without whitespaces</returns> 

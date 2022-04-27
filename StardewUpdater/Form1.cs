@@ -18,6 +18,7 @@ using System.Configuration;
 using Gameloop.Vdf;
 using Gameloop.Vdf.Linq;
 using Gameloop.Vdf.JsonConverter;
+using Microsoft.VisualBasic;
 
 namespace StardewUpdater
 {
@@ -28,7 +29,7 @@ namespace StardewUpdater
         private Configuration configuration;
         public Dictionary<Action, string> functions = new Dictionary<Action, string>();
         //gets true when a backgroundoperation fails
-        private bool asnycHasFailed = false;  
+        private bool asnycHasFailed = false;
         private readonly string _apikey = "XXXXXXXXXX";
         private readonly string _gameName = "Stardew Valley";
         private readonly string _steamGameId = "413150";
@@ -53,6 +54,7 @@ namespace StardewUpdater
             if (hasConfig)
             {
                 functions.Add(getLatestSmapiVersion, "Searching for latest SMAPI Version......");
+                functions.Add(getAllMods, "Checking Mod Data...");
                 functions.Add(getLatestModVersions, "Searching for Mod Versions......");
                 functions.Add(setConfiguration, "Savin Progress...");
                 functions.Add(activateUI, "Making a splendid UI...");
@@ -289,6 +291,9 @@ namespace StardewUpdater
         {
             if (configuration.isSMAPIInstalled)
             {
+                List<Mods> backupConfig = configuration.installedMods;
+                configuration.installedMods = new List<Mods>();
+                configuration.unknownInstalledMods = new List<Mods>();
                 string[] mods = Directory.GetDirectories(Path.Combine(configuration.installationFolder, "Mods"));
                 foreach (string modFolder in mods)
                 {
@@ -300,7 +305,24 @@ namespace StardewUpdater
                             Mods moddata = JsonConvert.DeserializeObject<Mods>(File.ReadAllText(Path.Combine(modFolder, "manifest.json")));
                             if (moddata.Author == "SMAPI")
                                 continue;
-                            configuration.installedMods.Add(moddata);
+                            if (!moddata.UpdateKeys.Contains("Nexus:???") && !moddata.UpdateKeys.Contains("Nexus:-1"))
+                            {
+                                configuration.installedMods.Add(moddata);
+                            }
+                            else
+                            {
+                                if (hasConfig && backupConfig.Where(m => m.Name == moddata.Name).SingleOrDefault() != null)
+                                {
+                                    moddata.UpdateKeys = backupConfig.Where(m => m.Name == moddata.Name).Select(m => m.UpdateKeys).Single();
+                                }
+                                else
+                                {
+                                    string input = Interaction.InputBox($"No UpdateKeys could be found for the mod {moddata.Name}. Please search for them on 'www.nexusmods.com'. Search for the mod and copy the four-digit number from the URL into the input field. Leave empty for no further notification", "UpdateKeys", "");
+                                    moddata.UpdateKeys = new string[] { input??"Nexus:???" };
+                                }
+
+                                configuration.installedMods.Add(moddata);
+                            }
                         }
                         //Search for bigger Mods, multiple Directorys with manifests
                         else if (File.Exists(Path.Combine(modFolder, modFolder.Substring(modFolder.LastIndexOf(@"\")+1).SkipWhitespaces(), "manifest.json")))
@@ -308,7 +330,43 @@ namespace StardewUpdater
                             Mods moddata = JsonConvert.DeserializeObject<Mods>(File.ReadAllText(Path.Combine(modFolder, modFolder.Substring(modFolder.LastIndexOf(@"\") + 1).SkipWhitespaces(), "manifest.json")));
                             if (moddata.Author == "SMAPI")
                                 continue;
-                            configuration.installedMods.Add(moddata);
+                            if (!moddata.UpdateKeys.Contains("Nexus:???") && !moddata.UpdateKeys.Contains("Nexus:-1"))
+                            {
+                                configuration.installedMods.Add(moddata);
+                            }
+                            else
+                            {
+                                //Check each Directory for some manifest and a valid UpdateKey
+                                bool foundValidManifest = false;
+                                foreach(string dir in Directory.GetDirectories(modFolder))
+                                {
+                                    if (File.Exists(Path.Combine(modFolder, dir, "manifest.json")))
+                                    {
+                                        Mods deepermoddata = JsonConvert.DeserializeObject<Mods>(File.ReadAllText(Path.Combine(modFolder, dir, "manifest.json")));
+                                        if (!deepermoddata.UpdateKeys.Contains("Nexus:???") && !deepermoddata.UpdateKeys.Contains("Nexus:-1"))
+                                        {
+                                            configuration.installedMods.Add(deepermoddata);
+                                            foundValidManifest = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (!foundValidManifest)
+                                {
+                                    if (hasConfig && backupConfig.Where(m => m.Name == moddata.Name).SingleOrDefault() != null)
+                                    {
+                                        moddata.UpdateKeys = backupConfig.Where(m => m.Name == moddata.Name).Select(m => m.UpdateKeys).Single();
+                                    }
+                                    else
+                                    {
+                                        string input = Interaction.InputBox($"No UpdateKeys could be found for the mod {moddata.Name}. Please search for them on 'www.nexusmods.com'. Search for the mod and copy the four-digit number from the URL into the input field.", "UpdateKeys", "");
+                                        moddata.UpdateKeys = new string[] { input };
+                                    }
+
+                                    configuration.installedMods.Add(moddata);
+                                }
+                            }
                         }
                         //Search through all directorys for a manifest with UpdateKeys
                         else
@@ -320,7 +378,7 @@ namespace StardewUpdater
                                 try
                                 {
                                     Mods moddata = JsonConvert.DeserializeObject<Mods>(File.ReadAllText(file));
-                                    if (!moddata.UpdateKeys.Contains("Nexus:???"))
+                                    if (!moddata.UpdateKeys.Contains("Nexus:???") && !moddata.UpdateKeys.Contains("Nexus:-1"))
                                     {
                                         configuration.installedMods.Add(moddata);
                                         oneFileIsValid = true;
@@ -545,6 +603,19 @@ namespace StardewUpdater
                             var jsonResponse = JsonConvert.DeserializeObject<List<dynamic>>(jsonList[0].ToString());
                             Dictionary<string, string> mainFileIds = jsonResponse.Where(jr => jr.category_name == "MAIN").Select(jr => (jr.file_id, jr.name)).ToDictionary(jr => (string)jr.file_id, jr => (string)jr.name);//&& jr.name.ToString().contains(modname)
                             fileid = mainFileIds.Where(d => d.Value.SkipWhitespaces().Contains(modname)).Select(d => d.Key).SingleOrDefault();
+
+                            //Assuming an seperator
+                            if (fileid == null)
+                            {
+                                string modnamewithoutseperator = modname.Substring(0, modname.IndexOf("-")).SkipWhitespaces();
+                                fileid = mainFileIds.Where(d => d.Value.SkipWhitespaces().ToLower().Contains(modnamewithoutseperator)).Select(d => d.Key).SingleOrDefault();
+                            }
+
+                            if(fileid == null)
+                            {
+                                fileid = mainFileIds.Where(d => d.Value.SkipWhitespaces().ToLower().Contains("mainfile")).Select(d => d.Key).SingleOrDefault();
+                            }
+
                         }
                     }
                 }
@@ -716,27 +787,53 @@ namespace StardewUpdater
                     File.Move($"{nameWithOutSpaces}.rar", $@"{configuration.installationFolder}\{nameWithOutSpaces}.rar");
                     try
                     {
-                        Directory.Delete($@"{configuration.installationFolder}\Mods\{nameWithOutSpaces}", true);
+                            Directory.Delete($@"{configuration.installationFolder}\Mods\{mod.Name}", true);
                     }
-                    catch
+                    catch (Exception exSpace)
                     {
                         try
                         {
-                            string part = mod.UniqueID.Substring(mod.UniqueID.LastIndexOf('.')+1);
-                            Directory.Delete($@"{configuration.installationFolder}\Mods\{part}", true);
+                            Directory.Delete($@"{configuration.installationFolder}\Mods\{nameWithOutSpaces}", true);
                         }
-                        catch(Exception ex)
+                        catch (Exception exName)
                         {
-                            MessageBox.Show(ex.Message);
-                            break;
+                            try
+                            {
+                                string part = mod.UniqueID.Substring(mod.UniqueID.LastIndexOf('.') + 1);
+                                Directory.Delete($@"{configuration.installationFolder}\Mods\{part}", true);
+                            }
+                            catch (Exception exUnique)
+                            {
+                                //TODO: Can i fixe the access denied on SVE and Ridgeside ?
+                                Process.Start(configuration.installationFolder + @"\Mods\");
+                                string text = $"This folder ({mod.Name}) cant be deleted by the system cause someone fucked up the directory... Please delete it yourself and click ok to continue the process.";
+                                string caption = "Manual deletion";
+                                MessageBoxButtons buttons = MessageBoxButtons.OKCancel;
+                                MessageBoxIcon icon = MessageBoxIcon.Exclamation;
+                                DialogResult result = MessageBox.Show(text, caption, buttons, icon);
+                                if (result == DialogResult.OK)
+                                {
+                                    try
+                                    {
+                                        using (ArchiveFile archiveFile = new ArchiveFile($@"{configuration.installationFolder}\{nameWithOutSpaces}.rar"))
+                                        {
+                                            archiveFile.Extract($@"{configuration.installationFolder}\Mods");
+                                        }
+                                        File.Delete($@"{configuration.installationFolder}\{nameWithOutSpaces}.rar");
+                                    }
+                                    catch(Exception exManuel)
+                                    {
+                                        MessageBox.Show($"Something still doesnt work like intended : {exManuel}");
+                                        File.Delete($@"{configuration.installationFolder}\{nameWithOutSpaces}.rar");
+                                    }
+                                }
+                                else if (result == DialogResult.Cancel)
+                                {
+                                    File.Delete($@"{configuration.installationFolder}\{nameWithOutSpaces}.rar");
+                                }                                
+                            }
                         }
                     }
-                    
-                    using (ArchiveFile archiveFile = new ArchiveFile($@"{configuration.installationFolder}\{nameWithOutSpaces}.rar"))
-                    {
-                        archiveFile.Extract($@"{configuration.installationFolder}\Mods");
-                    }
-                    File.Delete($@"{configuration.installationFolder}\{nameWithOutSpaces}.rar");
                 }
             }, "Extracting Files...");
 

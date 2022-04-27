@@ -83,6 +83,9 @@ namespace StardewUpdater
                     using (StreamReader r = new StreamReader(_configfile))
                     {
                         string json = r.ReadToEnd();
+                        //Replace Revisions: Dont care about them and they are just messing everything up...
+                        json = json.ReplaceUnusedVersionRevisions();
+
                         modConfiguration = JsonConvert.DeserializeObject<Configuration>(json);
                     }
                 }
