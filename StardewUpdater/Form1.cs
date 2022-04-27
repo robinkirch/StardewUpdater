@@ -15,6 +15,9 @@ using System.Threading.Tasks;
 using System.Drawing;
 using System.Text.Json;
 using System.Configuration;
+using Gameloop.Vdf;
+using Gameloop.Vdf.Linq;
+using Gameloop.Vdf.JsonConverter;
 
 namespace StardewUpdater
 {
@@ -26,8 +29,10 @@ namespace StardewUpdater
         public Dictionary<Action, string> functions = new Dictionary<Action, string>();
         //gets true when a backgroundoperation fails
         private bool asnycHasFailed = false;
-        private readonly string _apikey = "XXXXXXXXXX";
+        private readonly string _apikey = "Q3FPNUUvVCtzWHltWFdKTDZhTklMRUdPOGRLUGlqaGh4dXhWd2laWXFZZ1RwREcxaDV1UlRzQ01SQk1LTnM5Ny0tMmNubVFvQnNYN3Rib0FWai9ucFN4QT09--119ab7b53305b8b1678b0007a3b28955f402e729";
+        //private readonly string _apikey = "XXXXXXXXXX";
         private readonly string _gameName = "Stardew Valley";
+        private readonly string _steamGameId = "413150";
         //TODO: Loose coupling with Updater
         //TODO: Better Form and Button Names
 
@@ -136,21 +141,103 @@ namespace StardewUpdater
         //Find Installfolder
         private void getInstallationFolder()
         {
-
-            //Ignoring Registry Information, cause i dont have a plan at all :D
-
-            DriveInfo[] allDrives = DriveInfo.GetDrives();
-            //First Steam librarys %steam% -> steamapps -> common
-            foreach (DriveInfo d in allDrives)
+            //Steam
+            JProperty jProperty;
+            string steampath = string.Empty;
+            using (var reader = new StreamReader(@"C:\Program Files (x86)\Steam\steamapps\libraryfolders.vdf"))
             {
-                if (d.IsReady)
+                VProperty volvos = VdfConvert.Deserialize(reader.ReadToEnd());
+                jProperty = volvos.ToJson();
+            }
+            var listofPaths = jProperty.First().Where(j => j.Path != "libraryfolders.contentstatsid");
+            foreach (var path in listofPaths)
+            {
+                var appIds = path.First().Last().KeysToList();
+
+                if (appIds.Contains(_steamGameId))
                 {
-                    //Guessing it is the main drive
-                    if (d.Name == "C:\\")
+                    steampath = path.First().First().First().ToString();
+                    steampath = steampath.Trim().Replace("\"", "");
+                    configuration.installationFolder = steampath + $@"\steamapps\common\{_gameName}";
+                    break;
+                }
+            }
+
+            //fallback if file is empty
+            if (string.IsNullOrEmpty(steampath))
+            {
+
+                DriveInfo[] allDrives = DriveInfo.GetDrives();
+                //First Steam librarys %steam% -> steamapps -> common
+                foreach (DriveInfo d in allDrives)
+                {
+                    if (d.IsReady)
                     {
-                        //Search through Program Files and Program Files (x86)
-                        string[] cdirs = Directory.GetDirectories(d.Name + "Program Files", "*steam*");
-                        foreach (string dir in cdirs)
+                        //Guessing it is the main drive
+                        if (d.Name == "C:\\")
+                        {
+                            //Search through Program Files and Program Files (x86)
+                            string[] cdirs = Directory.GetDirectories(d.Name + "Program Files", "*steam*");
+                            foreach (string dir in cdirs)
+                            {
+                                if (dir == "steamapps")
+                                {
+                                    configuration.knownSteamFolders.Add(dir);
+                                    //hit and search in it
+                                    if (Directory.Exists(dir + $@"\common\{_gameName}"))
+                                    {
+                                        configuration.installationFolder = dir + $@"\common\{_gameName}";
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    string innerDirs = Directory.GetDirectories(dir, "steamapps").SingleOrDefault();
+                                    if (innerDirs != string.Empty)
+                                    {
+                                        configuration.knownSteamFolders.Add(innerDirs);
+                                        //hit and search in it
+                                        if (Directory.Exists(innerDirs + $@"\common\{_gameName}"))
+                                        {
+                                            configuration.installationFolder = innerDirs + $@"\common\{_gameName}";
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            cdirs = Directory.GetDirectories(d.Name + "Program Files (x86)", "*steam*");
+                            foreach (string dir in cdirs)
+                            {
+                                if (dir == "steamapps")
+                                {
+                                    configuration.knownSteamFolders.Add(dir);
+                                    //hit and search in it
+                                    if (Directory.Exists(dir + $@"\common\{_gameName}"))
+                                    {
+                                        configuration.installationFolder = dir + $@"\common\{_gameName}";
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    string innerDirs = Directory.GetDirectories(dir, "steamapps").SingleOrDefault();
+                                    if (innerDirs != string.Empty)
+                                    {
+                                        configuration.knownSteamFolders.Add(innerDirs);
+                                        //hit and search in it
+                                        if (Directory.Exists(innerDirs + $@"\common\{_gameName}"))
+                                        {
+                                            configuration.installationFolder = innerDirs + $@"\common\{_gameName}";
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        string[] dirs = Directory.GetDirectories(d.Name, "*steam*");
+                        foreach (string dir in dirs)
                         {
                             if (dir == "steamapps")
                             {
@@ -174,70 +261,13 @@ namespace StardewUpdater
                                         configuration.installationFolder = innerDirs + $@"\common\{_gameName}";
                                         break;
                                     }
-                                }
-                            }
-                        }
-
-                        cdirs = Directory.GetDirectories(d.Name + "Program Files (x86)", "*steam*");
-                        foreach (string dir in cdirs)
-                        {
-                            if (dir == "steamapps")
-                            {
-                                configuration.knownSteamFolders.Add(dir);
-                                //hit and search in it
-                                if (Directory.Exists(dir + $@"\common\{_gameName}"))
-                                {
-                                    configuration.installationFolder = dir + $@"\common\{_gameName}";
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                string innerDirs = Directory.GetDirectories(dir, "steamapps").SingleOrDefault();
-                                if (innerDirs != string.Empty)
-                                {
-                                    configuration.knownSteamFolders.Add(innerDirs);
-                                    //hit and search in it
-                                    if (Directory.Exists(innerDirs + $@"\common\{_gameName}"))
-                                    {
-                                        configuration.installationFolder = innerDirs + $@"\common\{_gameName}";
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    string[] dirs = Directory.GetDirectories(d.Name, "*steam*");
-                    foreach(string dir in dirs)
-                    {
-                        if(dir == "steamapps")
-                        {
-                            configuration.knownSteamFolders.Add(dir);
-                            //hit and search in it
-                            if (Directory.Exists(dir + $@"\common\{_gameName}"))
-                            {
-                                configuration.installationFolder = dir + $@"\common\{_gameName}";
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            string innerDirs = Directory.GetDirectories(dir, "steamapps").SingleOrDefault();
-                            if (innerDirs != string.Empty)
-                            {
-                                configuration.knownSteamFolders.Add(innerDirs);
-                                //hit and search in it
-                                if (Directory.Exists(innerDirs + $@"\common\{_gameName}"))
-                                {
-                                    configuration.installationFolder = innerDirs + $@"\common\{_gameName}";
-                                    break;
                                 }
                             }
                         }
                     }
                 }
             }
+
 
             // TODO : Implement GOG Search
 

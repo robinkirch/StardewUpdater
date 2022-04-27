@@ -13,7 +13,6 @@ namespace StardewUpdater
 {
     public static class ExtensionMethods
     {
-
         private static readonly string appsettings = $@"{Application.StartupPath}\appsettings.json";
 
         /// <summary> 
@@ -73,6 +72,36 @@ namespace StardewUpdater
                     throw new Exception($"No key like '{key}' in appsettings.json was found.");
                 }
                 return value;
+            }
+        }
+
+        public static List<string> KeysToList(this JToken jToken)
+        {
+            try
+            {
+                JToken tempjToken = jToken;
+                while (tempjToken.HasValues)
+                {
+                    tempjToken = tempjToken.First();
+                    if (tempjToken.HasValues)
+                    {
+                        jToken = jToken.First();
+                    }
+                }
+
+                List<string> tokenList = new List<string>();
+                foreach (JToken token in jToken.Parent.Children())
+                {
+
+                    string name = token.ToString().Substring(0,token.ToString().IndexOf(":"));
+                    name = name.Trim().Replace("\"", "");
+                    tokenList.Add(name);
+                }
+                return tokenList;
+            }
+            catch(Exception ex)
+            {
+                return new List<string>() { ex.ToString() };
             }
         }
     }
