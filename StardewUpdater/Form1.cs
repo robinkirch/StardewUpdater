@@ -28,9 +28,8 @@ namespace StardewUpdater
         private Configuration configuration;
         public Dictionary<Action, string> functions = new Dictionary<Action, string>();
         //gets true when a backgroundoperation fails
-        private bool asnycHasFailed = false;
-        private readonly string _apikey = "Q3FPNUUvVCtzWHltWFdKTDZhTklMRUdPOGRLUGlqaGh4dXhWd2laWXFZZ1RwREcxaDV1UlRzQ01SQk1LTnM5Ny0tMmNubVFvQnNYN3Rib0FWai9ucFN4QT09--119ab7b53305b8b1678b0007a3b28955f402e729";
-        //private readonly string _apikey = "XXXXXXXXXX";
+        private bool asnycHasFailed = false;  
+        private readonly string _apikey = "XXXXXXXXXX";
         private readonly string _gameName = "Stardew Valley";
         private readonly string _steamGameId = "413150";
         //TODO: Loose coupling with Updater

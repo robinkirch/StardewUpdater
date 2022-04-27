@@ -59,6 +59,11 @@ namespace StardewUpdater
             return null;
         }
 
+        /// <summary> 
+        /// Reads a value to the matching keys from the manually added appsettings.json
+        /// </summary>
+        /// <param name="key">Name of the key in the file</param>
+        /// <returns>Returns a value or throws an exception if key is not found</returns> 
         public static string ReadFromAppSettings(string key)
         {
             using (StreamReader r = new StreamReader(appsettings))
@@ -75,6 +80,11 @@ namespace StardewUpdater
             }
         }
 
+        /// <summary> 
+        /// Goes to the lowest level of a JToken list and returns the keys in a list
+        /// </summary>
+        /// <param name="jToken">A list of JTokens whose depth does not matter</param>
+        /// <returns>Returns a list of keys of type string.  Returns null if the list is not JToken compliant</returns> 
         public static List<string> KeysToList(this JToken jToken)
         {
             try
