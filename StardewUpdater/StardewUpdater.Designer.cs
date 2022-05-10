@@ -1,7 +1,7 @@
 ﻿
 namespace StardewUpdater
 {
-    partial class Form1
+    partial class StardewUpdater
     {
         /// <summary>
         /// Erforderliche Designervariable.
@@ -29,7 +29,7 @@ namespace StardewUpdater
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(StardewUpdater));
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.listView1 = new System.Windows.Forms.ListView();
             this.textBox1 = new System.Windows.Forms.TextBox();

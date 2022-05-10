@@ -1,19 +1,31 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace StardewUpdater
 {
+    public enum VersionCompareTypes
+    {
+        Unknown,
+        Newer,
+        Older,
+        Equal,
+    }
+
     public static class ExtensionMethods
     {
-        private static readonly string appsettings = $@"{Application.StartupPath}\appsettings.json";
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
+        private static readonly string appsettings = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "StardewUpdater", "appsettings.json");
 
         /// <summary> 
         /// Converts version number to a three-digit version number.
@@ -21,6 +33,7 @@ namespace StardewUpdater
         /// <returns>Returns either the version number without revisions or null</returns> 
         public static Version VersionWithoutRevisions(this Version version)
         {
+            _logger.Trace($"Clear Versions: {version.ToString()}");
             if (version == null)
                 return null;
 
@@ -38,8 +51,13 @@ namespace StardewUpdater
         /// <returns>Returns an string without unused ( value -1) revisionnumbers</returns> 
         public static string ReplaceUnusedVersionRevisions(this string textWithVersions, string replacement = "0")
         {
+            _logger.Trace($"Remove unused Revisions and build numbers");
+            _logger.Trace($"Replacement: {replacement}");
+            _logger.Trace($"Text: {textWithVersions}");
+
+            textWithVersions = textWithVersions.Replace("\"Build\": -1", $"\"Build\": {replacement}");
             textWithVersions = textWithVersions.Replace("\"Revision\": -1", $"\"Revision\": {replacement}");
-            textWithVersions = textWithVersions.Replace("\"MajorRevision\": -1", $"\"MajorRevision\" {replacement}");
+            textWithVersions = textWithVersions.Replace("\"MajorRevision\": -1", $"\"MajorRevision\": {replacement}");
             textWithVersions = textWithVersions.Replace("\"MinorRevision\": -1", $"\"MinorRevision\": {replacement}");
             return textWithVersions;
         }
@@ -79,6 +97,7 @@ namespace StardewUpdater
         /// <returns>Returns a value or throws an exception if key is not found</returns> 
         public static string ReadFromAppSettings(string key)
         {
+            _logger.Trace($"Receive value for key: {key}");
             using (StreamReader r = new StreamReader(appsettings))
             {
                 string json = r.ReadToEnd();
@@ -87,6 +106,7 @@ namespace StardewUpdater
 
                 if(value == null)
                 {
+                    _logger.Error($"Key {key} not found");
                     throw new Exception($"No key like '{key}' in appsettings.json was found.");
                 }
                 return value;
@@ -100,6 +120,8 @@ namespace StardewUpdater
         /// <returns>Returns a list of keys of type string.  Returns null if the list is not JToken compliant</returns> 
         public static List<string> KeysToList(this JToken jToken)
         {
+            _logger.Trace($"Going through JToken");
+            
             try
             {
                 JToken tempjToken = jToken;
@@ -120,11 +142,60 @@ namespace StardewUpdater
                     name = name.Trim().Replace("\"", "");
                     tokenList.Add(name);
                 }
+                _logger.Debug($"{string.Join(",", tokenList)}");
                 return tokenList;
             }
             catch(Exception ex)
             {
+                _logger.Trace($"Can't go through JToken: {ex}");
                 return new List<string>() { ex.ToString() };
+            }
+        }
+
+        /// <summary> 
+        /// Compares the version of two mods and returns if the first is newer, older or equal. 
+        /// </summary>
+        /// <param name="firstMod">The first Mod to be compared</param>
+        /// <param name="secondMod">The second Mod to be compared</param>
+        /// <returns>Returns if the first mod is newer or older. Returns type Unknown if the mods dont have the same author or name</returns> 
+        public static VersionCompareTypes CompareModVersion(Mods firstMod, Mods secondMod)
+        {
+            _logger.Debug($"Compare Versions : {firstMod.Name}({firstMod.UniqueID}) vs {secondMod.Name}({secondMod.UniqueID})");
+            if (firstMod.Author == secondMod.Author && firstMod.Name == secondMod.Name)
+            {
+                if(firstMod.Version.VersionWithoutRevisions() == secondMod.Version.VersionWithoutRevisions())
+                    return VersionCompareTypes.Equal;
+
+                if (firstMod.Version.VersionWithoutRevisions() > secondMod.Version.VersionWithoutRevisions())
+                    return VersionCompareTypes.Newer;
+
+                if (firstMod.Version.VersionWithoutRevisions() < secondMod.Version.VersionWithoutRevisions())
+                    return VersionCompareTypes.Older;
+            }
+
+            _logger.Error($"No Compare possible");
+            return VersionCompareTypes.Unknown;
+        }
+
+        /// <summary> 
+        /// Deletes a Directory and Wait for the process to end. 
+        /// https://stackoverflow.com/questions/9370012/waiting-for-system-to-delete-file
+        /// </summary>
+        /// <param name="filepath">Path of the directory to be deleted</param>
+        /// <param name="timeout">Optional parameter to limit waiting time</param>
+        public static void DeleteFileAndWait(string filepath, int timeout = 3000)
+        {
+            _logger.Trace($"DeleteAndWait on: {filepath}");
+            using (var fw = new FileSystemWatcher(Path.GetDirectoryName(filepath), Path.GetFileName(filepath)))
+            using (var mre = new ManualResetEventSlim())
+            {
+                fw.EnableRaisingEvents = true;
+                fw.Deleted += (object sender, FileSystemEventArgs e) =>
+                {
+                    mre.Set();
+                };
+                File.Delete(filepath);
+                mre.Wait(timeout);
             }
         }
     }

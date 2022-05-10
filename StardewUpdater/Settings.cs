@@ -35,7 +35,7 @@ namespace StardewUpdater
         {
             comboBox1.SelectedItem = comboBox1.Items[(int)getGame(configuration.installationFolder)];
             textBox1.Text = configuration.installationFolder;
-            label3.Text = "0.0.4";
+            label3.Text = "0.0.5";
             label5.Text = configuration.SMAPIVersion.ToString();
             label7.Text = GetGameVersion();
         }
