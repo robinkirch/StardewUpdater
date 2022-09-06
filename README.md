@@ -1,5 +1,5 @@
 # StardewUpdater
-An updater for SMAPI and mods of Stardew Valley. Automatic version detection with backups
+An updater for SMAPI and mods of Stardew Valley. Automatic version detection with backups, settings and dependency checking
 
 ## Introduction
 ----
@@ -36,7 +36,7 @@ sw.WriteLine("\"InstallationScript\": \"C:/Program Files (x86)/Steam/steamapps/l
 ```
 ----
 
-##NuGet packages
+## NuGet packages
 
 | Plugin | Version | Project |
 | ------ | ------ | ------ |
@@ -45,6 +45,15 @@ sw.WriteLine("\"InstallationScript\": \"C:/Program Files (x86)/Steam/steamapps/l
 | SevenZipExtractor | 1.0.16 | https://github.com/adoconnection/SevenZipExtractor |
 | NLog | 4.7.15 | https://nlog-project.org/ |
 | Gameloop.VDF | 0.6.2 | https://github.com/shravan2x/Gameloop.Vdf |
+
+
+## INFORMATION
+```diff
+- The project is currently paused due to missing data for different machines. Basically the program works 
+- as described in the changelogs. Depending on the machine, different errors can occur as also described below.
+
+- I am always available for further questions and enhancements. Contact: social@kirch.tech
+```
 
 ## Changelogs
 ----
